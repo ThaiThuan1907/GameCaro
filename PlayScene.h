@@ -19,3 +19,8 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
 
 // HÀM XỬ LÝ CLICK
 int HandlePlayClick(int mouseX, int mouseY, int board[BOARD_ROWS][BOARD_COLS], int* currentPlayer, int currentState, Uint32* turnStartTime);
+int HandlePlayKeyboard(SDL_Event& event, int board[BOARD_ROWS][BOARD_COLS], int* currentPlayer, int currentState, Uint32* turnStartTime, int& cursorRow, int& cursorCol);
+
+void SetGameMode(int mode, int difficulty);
+
+void CheckAIMove(int board[BOARD_ROWS][BOARD_COLS], int* currentPlayer, Uint32* turnStartTime);

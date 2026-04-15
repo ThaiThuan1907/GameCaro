@@ -23,3 +23,9 @@ enum GameState {
     STATE_SETTINGS_ABOUT,   // Xem thông tin [cite: 23]
     STATE_PLAYING           // ?ang trong tr?n ??u [cite: 24]
 };
+
+enum AIDifficulty {
+    AI_EASY = 0,
+    AI_MEDIUM = 1,
+    AI_HARD = 2
+};

@@ -11,6 +11,7 @@
 #include "PvAIScene.h"
 #include "PvPScene.h"
 #include "UITextBox.h"
+#include "FileManager.h"
 
 int main(int argc, char* args[])
 {
@@ -150,6 +151,18 @@ int main(int argc, char* args[])
 
                     if (currentState == STATE_MENU) {
                         currentState = HandleMenuClick(clickX, clickY, btnNewGame, btnLoadGame, btnSetting, btnExit, currentState);
+                        if (currentState == STATE_LOAD_GAME) {
+                            int dummyTime, loadedMode, loadedDiff;
+                            if (FileManager::LoadGame("quicksave.sav", gameBoard, currentPlayer, dummyTime, loadedMode, loadedDiff)) {
+                                SetGameMode(loadedMode, loadedDiff); 
+                                currentState = STATE_PLAYING;
+                                turnStartTime = SDL_GetTicks();
+                                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Load Game", "Game loaded correctly!", NULL);
+                            } else {
+                                SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Load Game", "No save file!", NULL);
+                                currentState = STATE_MENU;
+                            }
+                        }
                         if (currentState == -1) {
                             isRunning = false;
                         }
@@ -159,9 +172,18 @@ int main(int argc, char* args[])
                     }
                     else if (currentState == STATE_PVAI_DIFFICULTY) {
                         currentState = HandlePvAIClick(clickX, clickY, btnEasy, btnMedium, btnHard, currentState);
+                        if (currentState == STATE_PLAYING) {
+                            ResetBoard(gameBoard); // DỌN DẸP BÀN CỜ [cite: 147]
+                            matchStartTime = 0;
+                        }
                     }
                     else if (currentState == STATE_PVP_INPUT_NAME) {
                         currentState = HandlePvPMouseClick(clickX, clickY, &boxPlayer1, &boxPlayer2, btnStartGame, currentState);
+                        if (currentState == STATE_PLAYING) {
+                            ResetBoard(gameBoard); // DỌN DẸP BÀN CỜ khi vào ván mới [cite: 147]
+                            SetGameMode(0, 0); 
+                            matchStartTime = 0; // Reset đồng hồ tổng
+                        }
                     }
                     else if (currentState == STATE_PLAYING) {
                         currentState = HandlePlayClick(clickX, clickY, gameBoard, &currentPlayer, currentState, &turnStartTime);
@@ -174,6 +196,11 @@ int main(int argc, char* args[])
                 if (currentState == STATE_PVP_INPUT_NAME) {
                     HandleTextBoxEvent(&boxPlayer1, event);
                     HandleTextBoxEvent(&boxPlayer2, event);
+                }
+                else if (currentState == STATE_PLAYING) {
+                    // PHẦN CỦA BẠN: Gọi xử lý bàn phím (WASD + Space + S + ESC) [cite: 149-151]
+                    int dummyR, dummyC;
+                    currentState = HandlePlayKeyboard(event, gameBoard, &currentPlayer, currentState, &turnStartTime, dummyR, dummyC);
                 }
             }
         } // <--- ĐÓNG VÒNG LẶP SỰ KIỆN TẠI ĐÂY
@@ -239,6 +266,9 @@ int main(int argc, char* args[])
                     currentPlayer = (currentPlayer == 1) ? 2 : 1;
                     turnStartTime = SDL_GetTicks(); // Reset đồng hồ
                 }
+
+                // Gọi bộ não AI thực hiện nước đi nếu đến lượt [cite: 153]
+                CheckAIMove(gameBoard, &currentPlayer, &turnStartTime);
 
                 // Gọi hàm vẽ siêu cấp: Truyền tên (từ 2 cái Textbox lúc nãy) và thời gian vào
                 RenderPlayScene(gameRenderer, bgPlaying, texBoard, texScoreboard, texInfoX, texInfoO, texFillInfo, texX, texO, gameBoard, font64, font36, boxPlayer1.textContent, boxPlayer2.textContent, currentPlayer, matchTime, turnTimeLeft);

@@ -11,19 +11,22 @@ void RenderPvAIScene(SDL_Renderer* renderer, SDL_Texture* background, UIButton b
     DrawUIButton(btnHard, renderer);
 }
 
+#include "PlayScene.h"
+
 int HandlePvAIClick(int mouseX, int mouseY, UIButton btnEasy, UIButton btnMedium, UIButton btnHard, int currentState) {
     int newState = currentState;
 
-    // Tạm thời, dù chọn độ khó nào thì cũng nhảy thẳng vào màn hình chơi game (STATE_PLAYING)
     if (CheckMouseHover(btnEasy, mouseX, mouseY) == true) {
+        SetGameMode(1, 0); // PvAI, Easy
         newState = STATE_PLAYING;
     }
     else if (CheckMouseHover(btnMedium, mouseX, mouseY) == true) {
+        SetGameMode(1, 1); // PvAI, Medium
         newState = STATE_PLAYING;
     }
     else if (CheckMouseHover(btnHard, mouseX, mouseY) == true) {
+        SetGameMode(1, 2); // PvAI, Hard
         newState = STATE_PLAYING;
     }
-
     return newState;
 }
