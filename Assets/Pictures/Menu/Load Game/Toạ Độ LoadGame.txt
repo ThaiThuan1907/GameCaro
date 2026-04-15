@@ -1,0 +1,7 @@
+				X		Y		W		H
+Load Game			1316		351		562		198
+Rename				1316		570		562		198
+Delete				1316		789		562		207
+Search Bar			20		0		1900		321
+Panel				77		292		1822		753
+Ảnh lớn				0		0		1920		1080

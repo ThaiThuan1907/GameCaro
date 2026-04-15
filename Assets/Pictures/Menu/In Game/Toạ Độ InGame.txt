@@ -1,0 +1,6 @@
+				X		Y		W		H
+Board				441		16		1042		194
+InfoO				1418		136		460		883
+InfoX				42		136		460		883
+RecDisplay1			110		442		323		310
+RecDisplay2			1483		442		323		310

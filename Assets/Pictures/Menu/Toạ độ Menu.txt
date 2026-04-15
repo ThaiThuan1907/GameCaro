@@ -1,0 +1,6 @@
+				X		Y		W		H
+Ảnh lớn				0		0		1920		1080
+New Game			768		482		385		133
+Load Game			768		622		385		133
+Setting				768		762		385		133
+Exit				768		902		385		133

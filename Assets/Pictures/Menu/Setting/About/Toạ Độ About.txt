@@ -1,0 +1,3 @@
+				X		Y		W		H
+aboutContent			412		356		1108		682
+
