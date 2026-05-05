@@ -23,8 +23,11 @@ void DrawTextCenter(SDL_Renderer* renderer, TTF_Font* font, std::string text, in
     }
 }
 
-void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture* texBoard, SDL_Texture* texScoreboard, SDL_Texture* texInfoX, SDL_Texture* texInfoO, SDL_Texture* texFillInfo, SDL_Texture* texX, SDL_Texture* texO, int board[BOARD_ROWS][BOARD_COLS], TTF_Font* font64, TTF_Font* font36, std::string nameP1, std::string nameP2, int currentPlayer, int matchTimeInSeconds, int countdownTime) {
-
+void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture* texBoard, SDL_Texture* texScoreboard, SDL_Texture* texInfoX,
+    SDL_Texture* texInfoO, SDL_Texture* texFillInfo, SDL_Texture* texX, SDL_Texture* texO, int board[BOARD_ROWS][BOARD_COLS], TTF_Font* font64,
+    TTF_Font* font36, std::string nameP1, std::string nameP2, int currentPlayer, int matchTimeInSeconds, int countdownTime,
+    int controlMode, int cursorRow, int cursorCol)
+{
     // 1-4. VẼ ẢNH NHƯ CŨ (Bạn giữ nguyên đoạn code vẽ BG, UI, Board, và vòng lặp vẽ X, O nhé)
     DrawTexture(bgPlaying, renderer, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     DrawTexture(texInfoX, renderer, 42, 136, 460, 883);
@@ -103,6 +106,31 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
         DrawTextCenter(renderer, font36, "Simulating Outcome" + dots, 1647, 558, colorGreen);
         DrawTextCenter(renderer, font64, "TIME", 1644, 620, colorWhite);
         DrawTextCenter(renderer, font64, timeSecStr, 1644, 680, timeColor);
+    }
+    // =========================================================
+    // VẼ CON TRỎ BÀN PHÍM (CHỈ HIỆN KHI CONTROL MODE == 1)
+    // =========================================================
+    if (controlMode == 1) {
+        // TÍNH TOÁN ĐUẨN XÁC THEO THÔNG SỐ CONSTANTS CỦA KIN
+        SDL_Rect cursorRect = {
+            BOARD_START_X + (cursorCol * CELL_SIZE),
+            BOARD_START_Y + (cursorRow * CELL_SIZE),
+            CELL_SIZE,
+            CELL_SIZE
+        };
+
+        // Đặt bút màu Đỏ (R=255, G=0, B=0)
+        SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+
+        // Vẽ viền chữ nhật đỏ nhấp nháy
+        SDL_RenderDrawRect(renderer, &cursorRect);
+
+        // Mẹo UI: Vẽ thêm 2 vòng nữa thụt vào trong để nét khung đỏ dày 3 pixels
+        cursorRect.x += 1; cursorRect.y += 1; cursorRect.w -= 2; cursorRect.h -= 2;
+        SDL_RenderDrawRect(renderer, &cursorRect);
+
+        cursorRect.x += 1; cursorRect.y += 1; cursorRect.w -= 2; cursorRect.h -= 2;
+        SDL_RenderDrawRect(renderer, &cursorRect);
     }
 }
 

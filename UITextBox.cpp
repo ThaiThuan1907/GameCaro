@@ -26,7 +26,7 @@ void HandleTextBoxEvent(UITextBox* textBox, SDL_Event event) {
     // 2. Xử lý gõ chữ cái và số (Text Input)
     else if (event.type == SDL_TEXTINPUT) {
         // Giới hạn tên người chơi tối đa 15 ký tự để không bị tràn khung
-        if (textBox->textContent.length() < 15) {
+        if (textBox->textContent.length() < 35) {
             textBox->textContent += event.text.text; // Nối chữ vừa gõ vào chuỗi
         }
     }

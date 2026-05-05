@@ -10,6 +10,8 @@ const int BOARD_COLS = 12;
 const int CELL_SIZE = 70;
 const int BOARD_START_X = 540;
 const int BOARD_START_Y = 221;
+// Thêm dòng này vào cùng khu vực với các STATE khác
+const int STATE_SETTING = 5; // (Hoặc bạn chọn số nào chưa bị trùng cũng được)
 
 enum GameState {
     STATE_MENU,

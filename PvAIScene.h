@@ -5,7 +5,7 @@
 #include "Constants.h"
 
 // Hàm vẽ giao diện chọn độ khó
-void RenderPvAIScene(SDL_Renderer* renderer, SDL_Texture* background, UIButton btnEasy, UIButton btnMedium, UIButton btnHard);
+void RenderPvAIScene(SDL_Renderer* renderer, SDL_Texture* background, UIButton btnEasy, UIButton btnMedium, UIButton btnHard, SDL_Texture* texBack, bool hBack);
 
 // Hàm xử lý click chuột chọn độ khó
 int HandlePvAIClick(int mouseX, int mouseY, UIButton btnEasy, UIButton btnMedium, UIButton btnHard, int currentState);

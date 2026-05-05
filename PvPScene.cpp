@@ -1,7 +1,7 @@
 #include "PvPScene.h"
 #include "TextureManager.h"
 
-void RenderPvPScene(SDL_Renderer* renderer, SDL_Texture* background, UIButton lblTitle, UITextBox boxP1, UITextBox boxP2, UIButton btnStart, TTF_Font* font, UIButton lblInstruction, UIButton lblP1, UIButton lblP2) {
+void RenderPvPScene(SDL_Renderer* renderer, SDL_Texture* background, UIButton lblTitle, UITextBox boxP1, UITextBox boxP2, UIButton btnStart, TTF_Font* font, UIButton lblInstruction, UIButton lblP1, UIButton lblP2, SDL_Texture* texBack, bool hBack) {
     // 1. Vẽ nền
     DrawTexture(background, renderer, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -30,6 +30,10 @@ bool CheckTextBoxClick(UITextBox box, int mouseX, int mouseY) {
 
 int HandlePvPMouseClick(int mouseX, int mouseY, UITextBox* boxP1, UITextBox* boxP2, UIButton btnStart, int currentState) {
     int newState = currentState;
+
+    if (mouseX >= 18 && mouseX <= 18 + 89 && mouseY >= 10 && mouseY <= 10 + 89) {
+        return STATE_NEW_GAME_SELECT; // Lùi lại 1 bước ra màn hình Chọn PvP/PvAI
+    }
 
     // 1. Kiểm tra click vào Ô nhập tên P1
     if (CheckTextBoxClick(*boxP1, mouseX, mouseY) == true) {

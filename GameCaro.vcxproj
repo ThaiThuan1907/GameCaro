@@ -130,22 +130,26 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Constants.h" />
+    <ClInclude Include="LoadGameScene.h" />
     <ClInclude Include="MenuScene.h" />
     <ClInclude Include="NewGameScene.h" />
     <ClInclude Include="PlayScene.h" />
     <ClInclude Include="PvAIScene.h" />
     <ClInclude Include="PvPScene.h" />
+    <ClInclude Include="SettingScene.h" />
     <ClInclude Include="TextureManager.h" />
     <ClInclude Include="UIButton.h" />
     <ClInclude Include="UITextBox.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="LoadGameScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MenuScene.cpp" />
     <ClCompile Include="NewGameScene.cpp" />
     <ClCompile Include="PlayScene.cpp" />
     <ClCompile Include="PvAIScene.cpp" />
     <ClCompile Include="PvPScene.cpp" />
+    <ClCompile Include="SettingScene.cpp" />
     <ClCompile Include="TextureManager.cpp" />
     <ClCompile Include="UIButton.cpp" />
     <ClCompile Include="UITextBox.cpp" />
