@@ -4,27 +4,20 @@
 #include <iostream>
 #include "Constants.h"
 
-// Quy tắc 5: Tên Hàm viết hoa chữ cái đầu (PascalCase) [cite: 108-111]
-class Game {
-public:
-    Game();
-    ~Game();
+using namespace std;
 
-    void Init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen);
-    void HandleEvents();
-    void Update();
-    void Render();
-    void Clean();
+// --- Biến toàn cục của Game (thay thế cho member variables trong class) ---
+extern bool   isRunning;
+extern SDL_Window*   gameWindow;
+extern SDL_Renderer* gameRenderer;
+extern int    currentState;
+extern int    currentMouseX;
+extern int    currentMouseY;
 
-    bool Running() { return isRunning; }
-
-private:
-    // Quy tắc 2: Khởi tạo giá trị ban đầu [cite: 93-96]
-    bool isRunning = false;
-    SDL_Window* window = NULL;
-    SDL_Renderer* renderer = NULL;
-
-    int currentState = STATE_MENU;
-    int currentMouseX = 0;
-    int currentMouseY = 0;
-};
+// --- Các hàm thủ tục thay thế cho method của class Game ---
+void GameInit(const char* title, int xpos, int ypos, int width, int height, bool fullscreen);
+void GameHandleEvents();
+void GameUpdate();
+void GameRender();
+void GameClean();
+bool GameIsRunning();
