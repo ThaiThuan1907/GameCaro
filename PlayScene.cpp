@@ -12,6 +12,7 @@
 // Logic Phần 5
 static BoardState boardLogic;
 static bool isGameFinished = false;
+static bool showVictoryPanel = true;
 static int gameMode = 0; // 0: PvP, 1: PvAI
 static int aiDifficulty = 0; 
 static int staticCursorRow = BOARD_ROWS / 2;
@@ -48,6 +49,7 @@ void SetGameMode(int mode, int difficulty) {
 void ResetBoard(int board[BOARD_ROWS][BOARD_COLS]) {
     ResetBoardState(&boardLogic);
     isGameFinished = false;
+    showVictoryPanel = true;
     for (int r = 0; r < BOARD_ROWS; r++) {
         for (int c = 0; c < BOARD_COLS; c++) {
             board[r][c] = 0;
@@ -174,7 +176,7 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
 
     if (isGameFinished) {
         if (boardLogic.winningCoords[0].r != -1) {
-            // 1. Highlight đường thắng (Vẽ đường gạch nối 5 quân)
+            // 1. Highlight đường thắng
             SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Màu vàng rực
             for (int i = 0; i < 4; i++) {
                 int x1 = BOARD_START_X + (boardLogic.winningCoords[i].c * CELL_SIZE) + CELL_SIZE / 2;
@@ -182,11 +184,12 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
                 int x2 = BOARD_START_X + (boardLogic.winningCoords[i+1].c * CELL_SIZE) + CELL_SIZE / 2;
                 int y2 = BOARD_START_Y + (boardLogic.winningCoords[i+1].r * CELL_SIZE) + CELL_SIZE / 2;
                 
-                // Vẽ đường dày bằng cách vẽ nhiều đường lệch nhau
                 for(int offset=-2; offset<=2; offset++)
                     SDL_RenderDrawLine(renderer, x1+offset, y1+offset, x2+offset, y2+offset);
             }
         }
+
+        if (!showVictoryPanel) return; // Nếu đang ẩn bảng thì không vẽ các phần dưới
 
         // 2. Overlay mờ nền
         SDL_Rect overlay = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
@@ -194,11 +197,12 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 150);
         SDL_RenderFillRect(renderer, &overlay);
         
-        // 3. Bảng thông báo chiến thắng - DI CHUYỂN XUỐNG DƯỚI ĐỂ TRÁNH CHE BÀN CỜ
-        SDL_Rect panel = { SCREEN_WIDTH/2 - 300, 780, 600, 280 };
-        SDL_SetRenderDrawColor(renderer, 15, 15, 15, 240); // Đậm hơn một chút
+        // 3. Bảng thông báo chiến thắng - CỐ ĐỊNH Ở DƯỚI
+        int panelY = 780; 
+        SDL_Rect panel = { SCREEN_WIDTH/2 - 300, panelY, 600, 280 };
+        SDL_SetRenderDrawColor(renderer, 15, 15, 15, 240); 
         SDL_RenderFillRect(renderer, &panel);
-        SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255); // Viền vàng Gold
+        SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255); 
         SDL_RenderDrawRect(renderer, &panel);
 
         // --- NỘI DUNG THÔNG BÁO ---
@@ -206,28 +210,28 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
         SDL_Color winColor = colorWhite;
 
         if (boardLogic.winningCoords[0].r != -1) {
-            // Có người thắng
             std::string winnerName = (currentPlayer == 1) ? (nameP1 == "" ? "Player 1" : nameP1) : (gameMode == 1 ? "CPU Master" : (nameP2 == "" ? "Player 2" : nameP2));
             winText = "VICTORY: " + winnerName;
             winColor = (currentPlayer == 1 || (gameMode == 0 && currentPlayer == 2)) ? colorGreen : colorRed;
             if (gameMode == 1 && currentPlayer == 2) winText = "DEFEAT: CPU WINS";
         } else {
-            // Hòa
             winText = "DRAW GAME";
             winColor = colorWhite;
         }
         
-        DrawTextCenter(renderer, font64, winText, 960, 850, winColor);
+        DrawTextCenter(renderer, font64, winText, 960, panelY + 60, winColor);
         
-        // Hiện thời gian trận đấu
         int m = matchTimeInSeconds / 60;
         int s = matchTimeInSeconds % 60;
         std::string timeInfo = "Final Time: " + std::to_string(m) + "m " + std::to_string(s) + "s";
-        DrawTextCenter(renderer, font36, timeInfo, 960, 900, colorWhite);
+        DrawTextCenter(renderer, font36, timeInfo, 960, panelY + 110, colorWhite);
+
+        // Gợi ý ẩn bảng
+        SDL_Color gray = { 150, 150, 150, 255 };
+        DrawTextCenter(renderer, font36, "(Click anywhere to toggle view)", 960, panelY + 145, gray);
         
-        // Cập nhật tọa độ nút bấm cho khớp vị trí Panel mới
-        btnRestart.coordinateY = 940;
-        btnHome.coordinateY = 940;
+        btnRestart.coordinateY = panelY + 190;
+        btnHome.coordinateY = panelY + 190;
         
         DrawUIButton(btnRestart, renderer);
         DrawUIButton(btnHome, renderer);
@@ -238,13 +242,17 @@ int HandlePlayClick(int mouseX, int mouseY, int board[BOARD_ROWS][BOARD_COLS], i
     if (isGameFinished) {
         if (CheckMouseHover(btnRestart, mouseX, mouseY)) {
             ResetBoard(board);
+            *currentPlayer = 1;
             *turnStartTime = SDL_GetTicks();
-            return currentState;
+            return STATE_PLAYING;
         }
         if (CheckMouseHover(btnHome, mouseX, mouseY)) {
             ResetBoard(board);
             return STATE_MENU;
         }
+
+        // --- CÁCH 3: CLICK VÀO VÙNG KHÁC ĐỂ ẨN/HIỆN BẢNG ---
+        showVictoryPanel = !showVictoryPanel;
         return currentState;
     }
     if (gameMode == 1 && *currentPlayer == 2) return currentState;
