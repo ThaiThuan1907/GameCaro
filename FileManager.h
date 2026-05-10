@@ -1,16 +1,20 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <fstream>
-#include "Constants.h"
+using namespace std;
+// Nhóm 4: Quản Lý Dữ Liệu - Phong cách thủ tục (không OOP)
 
-// Nhóm 4: Quản Lý Dữ Liệu
-namespace FileManager {
-    // Lưu thêm mode và difficulty
-    bool SaveGame(const std::string& filename, int board[12][12], int currentPlayer, int matchTime, int gameMode, int aiDifficulty);
-    bool LoadGame(const std::string& filename, int board[12][12], int& currentPlayer, int& matchTime, int& gameMode, int& aiDifficulty);
-    
-    std::vector<std::string> ListSaveFiles();
-    bool DeleteFile(const std::string& filename);
-    bool RenameFile(const std::string& oldName, const std::string& newName);
-}
+// Lưu trạng thái ván cờ ra file .sav
+bool SaveGame(const string& filename, int board[12][12], int currentPlayer, int matchTime, int gameMode, int aiDifficulty);
+
+// Đọc trạng thái ván cờ từ file .sav
+bool LoadGame(const string& filename, int board[12][12], int& currentPlayer, int& matchTime, int& gameMode, int& aiDifficulty);
+
+// Liệt kê tất cả file .sav trong thư mục hiện tại
+vector<string> ListSaveFiles();
+
+// Xoá file theo tên
+bool DeleteSaveFile(const string& filename);
+
+// Đổi tên file
+bool RenameSaveFile(const string& oldName, const string& newName);
