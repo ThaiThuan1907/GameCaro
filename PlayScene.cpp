@@ -10,8 +10,7 @@
 #include <sstream>
 
 // Logic Phần 5
-static CaroBoard boardLogic;
-static CaroAI aiLogic;
+static BoardState boardLogic;
 static bool isGameFinished = false;
 static int gameMode = 0; // 0: PvP, 1: PvAI
 static int aiDifficulty = 0; 
@@ -43,11 +42,11 @@ void SetGameMode(int mode, int difficulty) {
     gameMode = mode;
     aiDifficulty = difficulty;
     isGameFinished = false;
-    boardLogic.Reset();
+    ResetBoardState(&boardLogic);
 }
 
 void ResetBoard(int board[BOARD_ROWS][BOARD_COLS]) {
-    boardLogic.Reset();
+    ResetBoardState(&boardLogic);
     isGameFinished = false;
     for (int r = 0; r < BOARD_ROWS; r++) {
         for (int c = 0; c < BOARD_COLS; c++) {
@@ -56,12 +55,16 @@ void ResetBoard(int board[BOARD_ROWS][BOARD_COLS]) {
     }
 }
 
+bool IsGameFinished() {
+    return isGameFinished;
+}
+
 void ProcessMove(int r, int c, int board[BOARD_ROWS][BOARD_COLS], int* currentPlayer, Uint32* turnStartTime) {
     if (isGameFinished) return;
     if (board[r][c] == 0) {
         board[r][c] = *currentPlayer;
-        boardLogic.PlacePiece(r, c, *currentPlayer);
-        if (boardLogic.CheckWin(r, c)) {
+        PlacePiece(&boardLogic, r, c, *currentPlayer);
+        if (CheckWin(&boardLogic, r, c)) {
             isGameFinished = true;
             return;
         }
@@ -74,7 +77,7 @@ void CheckAIMove(int board[BOARD_ROWS][BOARD_COLS], int* currentPlayer, Uint32* 
     if (!isGameFinished && gameMode == 1 && *currentPlayer == 2) {
         SDL_Delay(500); 
         int r, c;
-        aiLogic.CalculateMove(boardLogic, aiDifficulty, r, c);
+        CalculateAIMove(&boardLogic, aiDifficulty, r, c);
         ProcessMove(r, c, board, currentPlayer, turnStartTime);
     }
 }
@@ -91,7 +94,7 @@ void DrawTextCenter(SDL_Renderer* renderer, TTF_Font* font, std::string text, in
     }
 }
 
-void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture* texBoard, SDL_Texture* texScoreboard, SDL_Texture* texInfoX, SDL_Texture* texInfoO, SDL_Texture* texFillInfo, SDL_Texture* texX, SDL_Texture* texO, int board[BOARD_ROWS][BOARD_COLS], TTF_Font* font64, TTF_Font* font36, std::string nameP1, std::string nameP2, int currentPlayer, int matchTimeInSeconds, int countdownTime) {
+void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture* texBoard, SDL_Texture* texScoreboard, SDL_Texture* texInfoX, SDL_Texture* texInfoO, SDL_Texture* texFillInfo, SDL_Texture* texX, SDL_Texture* texO, int board[BOARD_ROWS][BOARD_COLS], TTF_Font* font64, TTF_Font* font36, std::string nameP1, std::string nameP2, int currentPlayer, int matchTimeInSeconds, int countdownTime, int controlMode, int cursorRow, int cursorCol) {
     InitGameOverButtons(renderer);
     
     // 1. Vẽ Nền và Các Bảng Thông Tin
@@ -108,7 +111,7 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
         for (int c = 0; c < BOARD_COLS; c++) {
             int drawX = BOARD_START_X + (c * CELL_SIZE);
             int drawY = BOARD_START_Y + (r * CELL_SIZE);
-            if (!isGameFinished && r == staticCursorRow && c == staticCursorCol) {
+            if (!isGameFinished && r == cursorRow && c == cursorCol) {
                 SDL_Rect cursorRect = { drawX, drawY, CELL_SIZE, CELL_SIZE };
                 SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
                 SDL_SetRenderDrawColor(renderer, 255, 255, 0, 100); 
@@ -166,15 +169,47 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
     }
 
     if (isGameFinished) {
+        // 1. Highlight đường thắng (Vẽ đường gạch nối 5 quân)
+        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Màu vàng rực
+        for (int i = 0; i < 4; i++) {
+            int x1 = BOARD_START_X + (boardLogic.winningCoords[i].c * CELL_SIZE) + CELL_SIZE / 2;
+            int y1 = BOARD_START_Y + (boardLogic.winningCoords[i].r * CELL_SIZE) + CELL_SIZE / 2;
+            int x2 = BOARD_START_X + (boardLogic.winningCoords[i+1].c * CELL_SIZE) + CELL_SIZE / 2;
+            int y2 = BOARD_START_Y + (boardLogic.winningCoords[i+1].r * CELL_SIZE) + CELL_SIZE / 2;
+            
+            // Vẽ đường dày bằng cách vẽ nhiều đường lệch nhau
+            for(int offset=-2; offset<=2; offset++)
+                SDL_RenderDrawLine(renderer, x1+offset, y1+offset, x2+offset, y2+offset);
+        }
+
+        // 2. Overlay mờ nền
         SDL_Rect overlay = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 180);
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 150);
         SDL_RenderFillRect(renderer, &overlay);
         
-        // --- PHẦN MỚI: HIỆN NGƯỜI THẮNG ---
-        std::string winText = (currentPlayer == 1) ? "PLAYER 1 WINS!" : (gameMode == 1 ? "CPU WINS!" : "PLAYER 2 WINS!");
-        DrawTextCenter(renderer, font64, winText, 960, 400, colorGreen);
-        DrawTextCenter(renderer, font64, "G A M E   O V E R", 960, 480, colorRed);
+        // 3. Bảng thông báo chiến thắng - DI CHUYỂN XUỐNG DƯỚI ĐỂ TRÁNH CHE BÀN CỜ
+        SDL_Rect panel = { SCREEN_WIDTH/2 - 300, 780, 600, 280 };
+        SDL_SetRenderDrawColor(renderer, 15, 15, 15, 240); // Đậm hơn một chút
+        SDL_RenderFillRect(renderer, &panel);
+        SDL_SetRenderDrawColor(renderer, 255, 215, 0, 255); // Viền vàng Gold
+        SDL_RenderDrawRect(renderer, &panel);
+
+        // --- NỘI DUNG THÔNG BÁO ---
+        std::string winText = (currentPlayer == 1) ? "VICTORY: PLAYER 1" : (gameMode == 1 ? "DEFEAT: CPU WINS" : "VICTORY: PLAYER 2");
+        SDL_Color winColor = (currentPlayer == 1 || gameMode == 0) ? colorGreen : colorRed;
+        
+        DrawTextCenter(renderer, font64, winText, 960, 850, winColor);
+        
+        // Hiện thời gian trận đấu
+        int m = matchTimeInSeconds / 60;
+        int s = matchTimeInSeconds % 60;
+        std::string timeInfo = "Final Time: " + std::to_string(m) + "m " + std::to_string(s) + "s";
+        DrawTextCenter(renderer, font36, timeInfo, 960, 900, colorWhite);
+        
+        // Cập nhật tọa độ nút bấm cho khớp vị trí Panel mới
+        btnRestart.coordinateY = 940;
+        btnHome.coordinateY = 940;
         
         DrawUIButton(btnRestart, renderer);
         DrawUIButton(btnHome, renderer);
@@ -205,6 +240,8 @@ int HandlePlayClick(int mouseX, int mouseY, int board[BOARD_ROWS][BOARD_COLS], i
 }
 
 int HandlePlayKeyboard(SDL_Event& event, int board[BOARD_ROWS][BOARD_COLS], int* currentPlayer, int currentState, Uint32* turnStartTime, int& cursorRow, int& cursorCol) {
+    staticCursorRow = cursorRow;
+    staticCursorCol = cursorCol;
     if (event.type == SDL_KEYDOWN) {
         if (event.key.keysym.sym == SDLK_ESCAPE) {
             const SDL_MessageBoxButtonData buttons[] = {

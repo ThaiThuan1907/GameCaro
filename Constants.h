@@ -16,12 +16,13 @@ enum GameState {
     STATE_NEW_GAME_SELECT, // Ch?n PvAI ho?c PvP 
     STATE_PVAI_DIFFICULTY,  // Ch?n Ez, Medium, Hard 
     STATE_PVP_INPUT_NAME,   // Nh?p tên P1, P2 [cite: 11]
-    STATE_LOAD_GAME,        // Màn hình Load file [cite: 13]
-    STATE_SETTINGS_SOUND,   // Cài ??t âm thanh [cite: 19]
-    STATE_SETTINGS_CONTROL, // Cài ??t ?i?u khi?n [cite: 20]
-    STATE_SETTINGS_RULES,   // Xem lu?t ch?i [cite: 23]
-    STATE_SETTINGS_ABOUT,   // Xem thông tin [cite: 23]
-    STATE_PLAYING           // ?ang trong tr?n ??u [cite: 24]
+    STATE_LOAD_GAME,        // Màn hình Load file
+    STATE_SETTING,          // Màn hình Setting tổng
+    STATE_SETTINGS_SOUND,   // Cài đặt âm thanh
+    STATE_SETTINGS_CONTROL, // Cài đặt điều khiển
+    STATE_SETTINGS_RULES,   // Xem luật chơi
+    STATE_SETTINGS_ABOUT,   // Xem thông tin
+    STATE_PLAYING           // Đang trong trận đấu
 };
 
 enum AIDifficulty {

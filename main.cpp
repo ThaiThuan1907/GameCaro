@@ -12,6 +12,8 @@
 #include "PvPScene.h"
 #include "UITextBox.h"
 #include "FileManager.h"
+#include "SettingScene.h"
+#include "LoadGameScene.h"
 
 int main(int argc, char* args[])
 {
@@ -51,6 +53,24 @@ int main(int argc, char* args[])
     Uint32 matchStartTime = 0;
     Uint32 turnStartTime = 0;
     int turnLimit = 15; // Mỗi lượt có 15 giây để đánh
+
+    // --- BIẾN DÀNH CHO LOAD GAME ---
+    std::vector<std::string> saveFiles;
+    int selectedSaveIndex = -1;
+    int currentScroll = 0;
+    UITextBox searchBox = CreateTextBox(411, 125, 1200, 78);
+
+    // --- BIẾN DÀNH CHO SETTING ---
+    int currentSettingTab = 0;   // 0: Sound, 1: Control, 2: Rules, 3: About
+    int musicVolume = 50;        // Âm lượng nhạc nền 0-100%
+    int sfxVolume = 80;          // Âm lượng hiệu ứng 0-100%
+    bool isDraggingMusic = false; // Trạng thái giữ chuột kéo thanh Music
+    bool isDraggingSFX = false;   // Trạng thái giữ chuột kéo thanh SFX
+    int controlMode = 0;         // 0: Đánh bằng Chuột, 1: Đánh bằng Bàn phím
+
+    // --- BIẾN CHO CON TRỎ BÀN PHÍM ---
+    int cursorRow = BOARD_ROWS / 2;
+    int cursorCol = BOARD_COLS / 2;
 
     // --- 1. TẢI ẢNH CHO MENU ---
     SDL_Texture* bgMenu = LoadTexture("Assets/Pictures/Menu/Menu1.png", gameRenderer);
@@ -132,6 +152,50 @@ int main(int argc, char* args[])
     SDL_Texture* texO = LoadTexture("Assets/Pictures/Menu/In Game/O.png", gameRenderer);              // Quân O
     SDL_Texture* texFillInfo = LoadTexture("Assets/Pictures/Menu/In Game/RecDisplay.png", gameRenderer);
 
+    // --- 6. TẢI ẢNH CHO LOAD GAME ---
+    SDL_Texture* bgLoadGame = LoadTexture("Assets/Pictures/Menu/Load Game/BG.png", gameRenderer);
+    SDL_Texture* texSearchBar = LoadTexture("Assets/Pictures/Menu/Load Game/searchBar.png", gameRenderer);
+    SDL_Texture* texPanel = LoadTexture("Assets/Pictures/Menu/Load Game/pannel.png", gameRenderer);
+    SDL_Texture* imgBtnLoad = LoadTexture("Assets/Pictures/Menu/Load Game/btLoadGame.png", gameRenderer);
+    SDL_Texture* imgBtnRename = LoadTexture("Assets/Pictures/Menu/Load Game/btRename.png", gameRenderer);
+    SDL_Texture* imgBtnDelete = LoadTexture("Assets/Pictures/Menu/Load Game/btDelete.png", gameRenderer);
+
+    UIButton btnLoad = CreateButton(1316, 351, 562, 198, imgBtnLoad);
+    UIButton btnRename = CreateButton(1316, 570, 562, 198, imgBtnRename);
+    UIButton btnDelete = CreateButton(1316, 789, 562, 198, imgBtnDelete);
+
+    // --- 7. TẢI ẢNH CHO SETTING ---
+    SDL_Texture* bgSetting = LoadTexture("Assets/Pictures/Menu/Setting/bg.png", gameRenderer);
+    SDL_Texture* texPanelSetting = LoadTexture("Assets/Pictures/Menu/Setting/Menu.png", gameRenderer);
+    SDL_Texture* texVanDijk = LoadTexture("Assets/Pictures/Menu/Setting/vanDijk.png", gameRenderer);
+
+    SDL_Texture* btnSound = LoadTexture("Assets/Pictures/Menu/Setting/buttonSound.png", gameRenderer);
+    SDL_Texture* btnControl = LoadTexture("Assets/Pictures/Menu/Setting/buttonControl.png", gameRenderer);
+    SDL_Texture* btnRules = LoadTexture("Assets/Pictures/Menu/Setting/buttonRules.png", gameRenderer);
+    SDL_Texture* btnAbout = LoadTexture("Assets/Pictures/Menu/Setting/buttonAbout.png", gameRenderer);
+
+    SDL_Texture* texLoa = LoadTexture("Assets/Pictures/Menu/Setting/Sound/sound.png", gameRenderer);
+    SDL_Texture* texSFXIcon = LoadTexture("Assets/Pictures/Menu/Setting/Sound/SFX.png", gameRenderer);
+
+    SDL_Texture* texTrack1 = LoadTexture("Assets/Pictures/Menu/Setting/Sound/Track.png", gameRenderer);
+    SDL_Texture* texBG1 = LoadTexture("Assets/Pictures/Menu/Setting/Sound/trackBG1.png", gameRenderer);
+    SDL_Texture* texKnob1 = LoadTexture("Assets/Pictures/Menu/Setting/Sound/knob1.png", gameRenderer);
+    SDL_Texture* texFill1 = LoadTexture("Assets/Pictures/Menu/Setting/Sound/fill1.png", gameRenderer);
+
+    SDL_Texture* texTrack2 = LoadTexture("Assets/Pictures/Menu/Setting/Sound/Track.png", gameRenderer);
+    SDL_Texture* texKnob2 = LoadTexture("Assets/Pictures/Menu/Setting/Sound/knob2.png", gameRenderer);
+    SDL_Texture* texFill2 = LoadTexture("Assets/Pictures/Menu/Setting/Sound/fill2.png", gameRenderer);
+
+    SDL_Texture* texPanelControl = LoadTexture("Assets/Pictures/Menu/Setting/Control/PanelControl.png", gameRenderer);
+    SDL_Texture* texBall1 = LoadTexture("Assets/Pictures/Menu/Setting/Control/Ball1.png", gameRenderer);
+    SDL_Texture* texBall2 = LoadTexture("Assets/Pictures/Menu/Setting/Control/Ball2.png", gameRenderer);
+ 
+    SDL_Texture* texRules = LoadTexture("Assets/Pictures/Menu/Setting/Rule/Rule.png", gameRenderer);
+    SDL_Texture* texAbout = LoadTexture("Assets/Pictures/Menu/Setting/About/aboutContent.png", gameRenderer);
+
+    SDL_Texture* texClose = LoadTexture("Assets/Pictures/CloseButton.png", gameRenderer);
+    SDL_Texture* texBack = LoadTexture("Assets/Pictures/BackButton.png", gameRenderer);
+
     // ================= VÒNG LẶP TRÒ CHƠI =================
     while (isRunning == true) {
 
@@ -143,6 +207,15 @@ int main(int argc, char* args[])
             else if (event.type == SDL_MOUSEMOTION) {
                 currentMouseX = event.motion.x;
                 currentMouseY = event.motion.y;
+
+                // Nếu đang dùng chuột, cập nhật vị trí ô cờ để highlight
+                if (controlMode == 0 && currentState == STATE_PLAYING) {
+                    if (currentMouseX >= BOARD_START_X && currentMouseX < BOARD_START_X + (BOARD_COLS * CELL_SIZE) &&
+                        currentMouseY >= BOARD_START_Y && currentMouseY < BOARD_START_Y + (BOARD_ROWS * CELL_SIZE)) {
+                        cursorCol = (currentMouseX - BOARD_START_X) / CELL_SIZE;
+                        cursorRow = (currentMouseY - BOARD_START_Y) / CELL_SIZE;
+                    }
+                }
             }
             else if (event.type == SDL_MOUSEBUTTONDOWN) {
                 if (event.button.button == SDL_BUTTON_LEFT) {
@@ -188,7 +261,22 @@ int main(int argc, char* args[])
                     else if (currentState == STATE_PLAYING) {
                         currentState = HandlePlayClick(clickX, clickY, gameBoard, &currentPlayer, currentState, &turnStartTime);
                     }
+                    else if (currentState == STATE_LOAD_GAME) {
+                        currentState = HandleLoadGameClick(clickX, clickY, btnLoad, btnRename, btnDelete, &searchBox, saveFiles, &selectedSaveIndex, currentScroll, currentState);
+                    }
 
+                }
+            }
+            // SỰ KIỆN CUỘN CHUỘT
+            else if (event.type == SDL_MOUSEWHEEL) {
+                if (currentState == STATE_LOAD_GAME) {
+                    if (event.wheel.y > 0) currentScroll -= 40;
+                    else if (event.wheel.y < 0) currentScroll += 40;
+
+                    if (currentScroll < 0) currentScroll = 0;
+                    int maxScroll = ((int)saveFiles.size() * 80) - 701;
+                    if (maxScroll < 0) maxScroll = 0;
+                    if (currentScroll > maxScroll) currentScroll = maxScroll;
                 }
             }
             // SỰ KIỆN GÕ PHÍM PHẢI NẰM TRONG VÒNG LẶP NÀY
@@ -197,11 +285,17 @@ int main(int argc, char* args[])
                     HandleTextBoxEvent(&boxPlayer1, event);
                     HandleTextBoxEvent(&boxPlayer2, event);
                 }
-                else if (currentState == STATE_PLAYING) {
-                    // PHẦN CỦA BẠN: Gọi xử lý bàn phím (WASD + Space + S + ESC) [cite: 149-151]
-                    int dummyR, dummyC;
-                    currentState = HandlePlayKeyboard(event, gameBoard, &currentPlayer, currentState, &turnStartTime, dummyR, dummyC);
+                else if (currentState == STATE_LOAD_GAME) {
+                    HandleTextBoxEvent(&searchBox, event);
                 }
+                else if (currentState == STATE_PLAYING) {
+                    currentState = HandlePlayKeyboard(event, gameBoard, &currentPlayer, currentState, &turnStartTime, cursorRow, cursorCol);
+                }
+            }
+
+            // XỬ LÝ SETTING
+            if (currentState == STATE_SETTING) {
+                HandleSettingEvents(event, &currentSettingTab, &musicVolume, &sfxVolume, &controlMode, &isDraggingMusic, &isDraggingSFX, currentState);
             }
         } // <--- ĐÓNG VÒNG LẶP SỰ KIỆN TẠI ĐÂY
 
@@ -224,6 +318,11 @@ int main(int argc, char* args[])
         }
         else if (currentState == STATE_PVP_INPUT_NAME) {
             btnStartGame.isHovered = CheckMouseHover(btnStartGame, currentMouseX, currentMouseY);
+        }
+        else if (currentState == STATE_LOAD_GAME) {
+            btnLoad.isHovered = CheckMouseHover(btnLoad, currentMouseX, currentMouseY);
+            btnRename.isHovered = CheckMouseHover(btnRename, currentMouseX, currentMouseY);
+            btnDelete.isHovered = CheckMouseHover(btnDelete, currentMouseX, currentMouseY);
         }
 
         // --- PHẦN 3: VẼ RA MÀN HÌNH ---
@@ -248,16 +347,24 @@ int main(int argc, char* args[])
             break;
 
         case STATE_PLAYING:
+        {
             // Nếu vừa mới vào ván, bắt đầu bấm giờ!
             if (matchStartTime == 0) {
                 matchStartTime = SDL_GetTicks();
                 turnStartTime = SDL_GetTicks();
             }
 
-            // Tính toán thời gian thực tại frame hiện tại
-            {
-                Uint32 currentTicks = SDL_GetTicks();
-                int matchTime = (currentTicks - matchStartTime) / 1000;
+            Uint32 currentTicks = SDL_GetTicks();
+
+                static int frozenMatchTime = 0;
+                int matchTime = 0;
+                if (!IsGameFinished()) {
+                    matchTime = (currentTicks - matchStartTime) / 1000;
+                    frozenMatchTime = matchTime;
+                } else {
+                    matchTime = frozenMatchTime;
+                }
+                
                 int turnTimeLeft = turnLimit - ((currentTicks - turnStartTime) / 1000);
 
                 // Nếu hết 15s mà chưa đánh -> tự động đổi lượt (Tùy chọn nâng cao)
@@ -271,9 +378,51 @@ int main(int argc, char* args[])
                 CheckAIMove(gameBoard, &currentPlayer, &turnStartTime);
 
                 // Gọi hàm vẽ siêu cấp: Truyền tên (từ 2 cái Textbox lúc nãy) và thời gian vào
-                RenderPlayScene(gameRenderer, bgPlaying, texBoard, texScoreboard, texInfoX, texInfoO, texFillInfo, texX, texO, gameBoard, font64, font36, boxPlayer1.textContent, boxPlayer2.textContent, currentPlayer, matchTime, turnTimeLeft);
+                RenderPlayScene(gameRenderer, bgPlaying, texBoard, texScoreboard, texInfoX, texInfoO, texFillInfo, texX, texO, gameBoard, font64, font36, boxPlayer1.textContent, boxPlayer2.textContent, currentPlayer, matchTime, turnTimeLeft, controlMode, cursorRow, cursorCol);
             }
             break;
+
+        case STATE_LOAD_GAME:
+        {
+            UIButton tmpClose = { 1813, 10, 89, 89 };
+            bool hClose = CheckMouseHover(tmpClose, currentMouseX, currentMouseY);
+            RenderLoadGameScene(gameRenderer, bgLoadGame, texSearchBar, texPanel, btnLoad, btnRename, btnDelete, &searchBox, saveFiles, selectedSaveIndex, currentScroll, font64, texClose, hClose);
+            break;
+        }
+
+        case STATE_SETTING:
+        {
+            UIButton tmpSound = { 398, 81, 269, 103 };
+            UIButton tmpControl = { 688, 81, 269, 103 };
+            UIButton tmpRules = { 960, 81, 269, 103 };
+            UIButton tmpAbout = { 1247, 81, 269, 103 };
+
+            bool hSound = CheckMouseHover(tmpSound, currentMouseX, currentMouseY);
+            bool hControl = CheckMouseHover(tmpControl, currentMouseX, currentMouseY);
+            bool hRules = CheckMouseHover(tmpRules, currentMouseX, currentMouseY);
+            bool hAbout = CheckMouseHover(tmpAbout, currentMouseX, currentMouseY);
+
+            UIButton tmpBall1 = { 489, 222, 218, 218 };
+            UIButton tmpBall2 = { 1169, 222, 213, 218 };
+            bool hBall1 = CheckMouseHover(tmpBall1, currentMouseX, currentMouseY) && (currentSettingTab == 1);
+            bool hBall2 = CheckMouseHover(tmpBall2, currentMouseX, currentMouseY) && (currentSettingTab == 1);
+
+            UIButton tmpClose = { 1813, 10, 89, 89 };
+            bool hClose = CheckMouseHover(tmpClose, currentMouseX, currentMouseY);
+
+            RenderSettingScene(gameRenderer, bgSetting, texPanelSetting, texVanDijk,
+                btnSound, btnControl, btnRules, btnAbout,
+                texLoa, texSFXIcon, texTrack1, texBG1, texFill1, texKnob1,
+                texTrack2, texFill2, texKnob2,
+                texPanelControl, texBall1, texBall2,
+                texClose,
+                currentSettingTab, musicVolume, sfxVolume, controlMode,
+                texRules, texAbout,
+                hSound, hControl, hRules, hAbout,
+                hBall1, hBall2,
+                hClose);
+            break;
+        }
         } // <--- ĐÓNG KHỐI SWITCH TẠI ĐÂY
 
 
@@ -312,7 +461,40 @@ int main(int argc, char* args[])
     SDL_DestroyTexture(bgPlaying);
     SDL_DestroyTexture(texBoard);
     SDL_DestroyTexture(texScoreboard);
-    SDL_DestroyTexture(texInfoX);
+    SDL_DestroyTexture(texFillInfo);
+
+    // Hủy Ảnh Load Game
+    SDL_DestroyTexture(bgLoadGame);
+    SDL_DestroyTexture(texSearchBar);
+    SDL_DestroyTexture(texPanel);
+    SDL_DestroyTexture(imgBtnLoad);
+    SDL_DestroyTexture(imgBtnRename);
+    SDL_DestroyTexture(imgBtnDelete);
+
+    // Hủy Ảnh Setting
+    SDL_DestroyTexture(bgSetting);
+    SDL_DestroyTexture(texPanelSetting);
+    SDL_DestroyTexture(texVanDijk);
+    SDL_DestroyTexture(btnSound);
+    SDL_DestroyTexture(btnControl);
+    SDL_DestroyTexture(btnRules);
+    SDL_DestroyTexture(btnAbout);
+    SDL_DestroyTexture(texLoa);
+    SDL_DestroyTexture(texSFXIcon);
+    SDL_DestroyTexture(texTrack1);
+    SDL_DestroyTexture(texBG1);
+    SDL_DestroyTexture(texKnob1);
+    SDL_DestroyTexture(texFill1);
+    SDL_DestroyTexture(texTrack2);
+    SDL_DestroyTexture(texKnob2);
+    SDL_DestroyTexture(texFill2);
+    SDL_DestroyTexture(texBall1);
+    SDL_DestroyTexture(texBall2);
+    SDL_DestroyTexture(texPanelControl);
+    SDL_DestroyTexture(texRules);
+    SDL_DestroyTexture(texAbout);
+    SDL_DestroyTexture(texClose);
+    SDL_DestroyTexture(texBack);
     SDL_DestroyTexture(texInfoO);
     SDL_DestroyTexture(texX);
     SDL_DestroyTexture(texO);

@@ -4,14 +4,13 @@
 #include <fstream>
 #include "Constants.h"
 
-// Nhóm 4: Quản Lý Dữ Liệu [cite: 139-145]
-class FileManager {
-public:
-    // Lưu thêm mode và difficulty [cite: 139]
-    static bool SaveGame(const std::string& filename, int board[12][12], int currentPlayer, int matchTime, int gameMode, int aiDifficulty);
-    static bool LoadGame(const std::string& filename, int board[12][12], int& currentPlayer, int& matchTime, int& gameMode, int& aiDifficulty);
+// Nhóm 4: Quản Lý Dữ Liệu
+namespace FileManager {
+    // Lưu thêm mode và difficulty
+    bool SaveGame(const std::string& filename, int board[12][12], int currentPlayer, int matchTime, int gameMode, int aiDifficulty);
+    bool LoadGame(const std::string& filename, int board[12][12], int& currentPlayer, int& matchTime, int& gameMode, int& aiDifficulty);
     
-    static std::vector<std::string> ListSaveFiles();
-    static bool DeleteFile(const std::string& filename);
-    static bool RenameFile(const std::string& oldName, const std::string& newName);
-};
+    std::vector<std::string> ListSaveFiles();
+    bool DeleteFile(const std::string& filename);
+    bool RenameFile(const std::string& oldName, const std::string& newName);
+}
