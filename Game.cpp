@@ -8,52 +8,71 @@
 #include "PvPScene.h"
 #include "UITextBox.h"
 
-Game::Game() {}
-Game::~Game() {}
+using namespace std;
 
-void Game::Init(const char* title, int xpos, int ypos, int width, int height, bool fullscreen) {
+// --- Định nghĩa các biến toàn cục (khai báo extern ở Game.h) ---
+bool   isRunning     = false;
+SDL_Window*   gameWindow   = NULL;
+SDL_Renderer* gameRenderer = NULL;
+int    currentState  = STATE_MENU;
+int    currentMouseX = 0;
+int    currentMouseY = 0;
+
+// Khởi tạo SDL, cửa sổ và renderer
+void GameInit(const char* title, int xpos, int ypos, int width, int height, bool fullscreen) {
     int flags = 0;
     if (fullscreen) flags = SDL_WINDOW_FULLSCREEN;
 
     if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
-        window = SDL_CreateWindow(title, xpos, ypos, width, height, flags | SDL_WINDOW_RESIZABLE);
-        renderer = SDL_CreateRenderer(window, -1, 0);
-        if (renderer) {
-            SDL_RenderSetLogicalSize(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
-            SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+        gameWindow   = SDL_CreateWindow(title, xpos, ypos, width, height, flags | SDL_WINDOW_RESIZABLE);
+        gameRenderer = SDL_CreateRenderer(gameWindow, -1, 0);
+        if (gameRenderer) {
+            SDL_RenderSetLogicalSize(gameRenderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+            SDL_SetRenderDrawColor(gameRenderer, 255, 255, 255, 255);
         }
         isRunning = true;
     }
 
     if (TTF_Init() < 0) {
-        std::cout << "Error: TTF_Init failed\n";
+        cout << "Error: TTF_Init failed\n";
     }
 }
 
-void Game::HandleEvents() {
+// Xử lý sự kiện chuột/bàn phím
+void GameHandleEvents() {
     SDL_Event event;
     while (SDL_PollEvent(&event)) {
         if (event.type == SDL_QUIT) {
             isRunning = false;
         }
-        // Logistics for mouse and other events can be moved here from main.cpp
-        // For brevity in this step, I'm setting up the structure.
+        if (event.type == SDL_MOUSEMOTION) {
+            currentMouseX = event.motion.x;
+            currentMouseY = event.motion.y;
+        }
     }
 }
 
-void Game::Update() {
-    // State updates logic
+// Cập nhật trạng thái game
+void GameUpdate() {
+    // Logic cập nhật state machine đặt ở đây
 }
 
-void Game::Render() {
-    SDL_RenderClear(renderer);
-    // Draw based on currentState
-    SDL_RenderPresent(renderer);
+// Vẽ frame hiện tại
+void GameRender() {
+    SDL_RenderClear(gameRenderer);
+    // Vẽ dựa vào currentState
+    SDL_RenderPresent(gameRenderer);
 }
 
-void Game::Clean() {
-    SDL_DestroyWindow(window);
-    SDL_DestroyRenderer(renderer);
+// Dọn dẹp tài nguyên khi thoát
+void GameClean() {
+    SDL_DestroyWindow(gameWindow);
+    SDL_DestroyRenderer(gameRenderer);
     TTF_Quit();
     SDL_Quit();
+}
+
+// Trả về trạng thái game còn chạy không
+bool GameIsRunning() {
+    return isRunning;
 }
