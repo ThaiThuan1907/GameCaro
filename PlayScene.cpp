@@ -68,6 +68,10 @@ void ProcessMove(int r, int c, int board[BOARD_ROWS][BOARD_COLS], int* currentPl
             isGameFinished = true;
             return;
         }
+        if (IsBoardFull(&boardLogic)) {
+            isGameFinished = true;
+            return;
+        }
         *currentPlayer = (*currentPlayer == 1) ? 2 : 1;
         *turnStartTime = SDL_GetTicks();
     }
@@ -169,17 +173,19 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
     }
 
     if (isGameFinished) {
-        // 1. Highlight đường thắng (Vẽ đường gạch nối 5 quân)
-        SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Màu vàng rực
-        for (int i = 0; i < 4; i++) {
-            int x1 = BOARD_START_X + (boardLogic.winningCoords[i].c * CELL_SIZE) + CELL_SIZE / 2;
-            int y1 = BOARD_START_Y + (boardLogic.winningCoords[i].r * CELL_SIZE) + CELL_SIZE / 2;
-            int x2 = BOARD_START_X + (boardLogic.winningCoords[i+1].c * CELL_SIZE) + CELL_SIZE / 2;
-            int y2 = BOARD_START_Y + (boardLogic.winningCoords[i+1].r * CELL_SIZE) + CELL_SIZE / 2;
-            
-            // Vẽ đường dày bằng cách vẽ nhiều đường lệch nhau
-            for(int offset=-2; offset<=2; offset++)
-                SDL_RenderDrawLine(renderer, x1+offset, y1+offset, x2+offset, y2+offset);
+        if (boardLogic.winningCoords[0].r != -1) {
+            // 1. Highlight đường thắng (Vẽ đường gạch nối 5 quân)
+            SDL_SetRenderDrawColor(renderer, 255, 255, 0, 255); // Màu vàng rực
+            for (int i = 0; i < 4; i++) {
+                int x1 = BOARD_START_X + (boardLogic.winningCoords[i].c * CELL_SIZE) + CELL_SIZE / 2;
+                int y1 = BOARD_START_Y + (boardLogic.winningCoords[i].r * CELL_SIZE) + CELL_SIZE / 2;
+                int x2 = BOARD_START_X + (boardLogic.winningCoords[i+1].c * CELL_SIZE) + CELL_SIZE / 2;
+                int y2 = BOARD_START_Y + (boardLogic.winningCoords[i+1].r * CELL_SIZE) + CELL_SIZE / 2;
+                
+                // Vẽ đường dày bằng cách vẽ nhiều đường lệch nhau
+                for(int offset=-2; offset<=2; offset++)
+                    SDL_RenderDrawLine(renderer, x1+offset, y1+offset, x2+offset, y2+offset);
+            }
         }
 
         // 2. Overlay mờ nền
@@ -196,8 +202,20 @@ void RenderPlayScene(SDL_Renderer* renderer, SDL_Texture* bgPlaying, SDL_Texture
         SDL_RenderDrawRect(renderer, &panel);
 
         // --- NỘI DUNG THÔNG BÁO ---
-        std::string winText = (currentPlayer == 1) ? "VICTORY: PLAYER 1" : (gameMode == 1 ? "DEFEAT: CPU WINS" : "VICTORY: PLAYER 2");
-        SDL_Color winColor = (currentPlayer == 1 || gameMode == 0) ? colorGreen : colorRed;
+        std::string winText = "";
+        SDL_Color winColor = colorWhite;
+
+        if (boardLogic.winningCoords[0].r != -1) {
+            // Có người thắng
+            std::string winnerName = (currentPlayer == 1) ? (nameP1 == "" ? "Player 1" : nameP1) : (gameMode == 1 ? "CPU Master" : (nameP2 == "" ? "Player 2" : nameP2));
+            winText = "VICTORY: " + winnerName;
+            winColor = (currentPlayer == 1 || (gameMode == 0 && currentPlayer == 2)) ? colorGreen : colorRed;
+            if (gameMode == 1 && currentPlayer == 2) winText = "DEFEAT: CPU WINS";
+        } else {
+            // Hòa
+            winText = "DRAW GAME";
+            winColor = colorWhite;
+        }
         
         DrawTextCenter(renderer, font64, winText, 960, 850, winColor);
         

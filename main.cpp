@@ -365,13 +365,18 @@ int main(int argc, char* args[])
                     matchTime = frozenMatchTime;
                 }
                 
-                int turnTimeLeft = turnLimit - ((currentTicks - turnStartTime) / 1000);
+                int turnTimeLeft = 0;
+                if (!IsGameFinished()) {
+                    turnTimeLeft = turnLimit - ((currentTicks - turnStartTime) / 1000);
 
-                // Nếu hết 15s mà chưa đánh -> tự động đổi lượt (Tùy chọn nâng cao)
-                if (turnTimeLeft < 0) {
-                    turnTimeLeft = 0;
-                    currentPlayer = (currentPlayer == 1) ? 2 : 1;
-                    turnStartTime = SDL_GetTicks(); // Reset đồng hồ
+                    // Nếu hết 15s mà chưa đánh -> tự động đổi lượt
+                    if (turnTimeLeft < 0) {
+                        turnTimeLeft = 0;
+                        currentPlayer = (currentPlayer == 1) ? 2 : 1;
+                        turnStartTime = SDL_GetTicks(); // Reset đồng hồ
+                    }
+                } else {
+                    turnTimeLeft = 0; // Hoặc giữ nguyên giá trị cuối cùng nếu muốn
                 }
 
                 // Gọi bộ não AI thực hiện nước đi nếu đến lượt [cite: 153]

@@ -21,6 +21,7 @@ void ResetBoardState(BoardState* state);
 // Logic đánh cờ
 bool PlacePiece(BoardState* state, int row, int col, int player);
 bool CheckWin(BoardState* state, int row, int col);
+bool IsBoardFull(BoardState* state);
 
 // Hỗ trợ điều khiển (Con trỏ ảo)
 void MoveBoardCursor(BoardState* state, int dr, int dc);

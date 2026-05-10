@@ -89,3 +89,13 @@ bool CheckWin(BoardState* state, int row, int col) {
 
     return false;
 }
+
+bool IsBoardFull(BoardState* state) {
+    if (!state) return false;
+    for (int i = 0; i < BOARD_ROWS; i++) {
+        for (int j = 0; j < BOARD_COLS; j++) {
+            if (state->board[i][j] == 0) return false;
+        }
+    }
+    return true;
+}
